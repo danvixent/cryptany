@@ -21,7 +21,7 @@ For decryption:
 
 ```bash
     $ cryptany -path /path/to/file.crypt -key somekey -dec
-        decryption successful
+        decrypted file: /path/to/file
 ```
 
 Specifying custom output directory:
