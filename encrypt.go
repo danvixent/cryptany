@@ -51,7 +51,7 @@ func main() {
 
 // doOp performs perfoms an fn which should be either encrypt or decrypt
 // on data and key
-func doOp(data, key []byte, outPath string, fn func([]byte, []byte) ([]byte, error)) error {
+func doOp(data, key []byte, outPath *string, fn func([]byte, []byte) ([]byte, error)) error {
 	// call fn on data & key and get the encrypted data
 	ciphered, err := fn(data, key)
 	if err != nil {
@@ -59,7 +59,7 @@ func doOp(data, key []byte, outPath string, fn func([]byte, []byte) ([]byte, err
 	}
 
 	// create the output file
-	out, err := os.Create(outPath)
+	out, err := os.Create(*outPath)
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func getGCM(key []byte) (cipher.AEAD, error) {
 // and determines the output path to use
 // isEnc tells whether it's encryption/decryption
 // to be performed.
-func getBytesAndOut(path *string, outPath *string, isEnc *bool) ([]byte, string) {
+func getBytesAndOut(path *string, outPath *string, isEnc *bool) ([]byte, *string) {
 	file, err := os.Open(*path)
 	if err != nil {
 		log.Fatalf("can't open file: %v", err)
@@ -175,5 +175,5 @@ func getBytesAndOut(path *string, outPath *string, isEnc *bool) ([]byte, string)
 			*outPath = *outPath + strings.TrimSuffix(info.Name(), crypt)
 		}
 	}
-	return fileBytes, *outPath
+	return fileBytes, outPath
 }
