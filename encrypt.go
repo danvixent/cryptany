@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -40,10 +41,12 @@ func main() {
 		if err = doOp(fileBytes, keyHash, outFile, encrypt); err != nil {
 			log.Fatalf("can't encrypt file: %v", err)
 		}
+		fmt.Println("encrypted file:", *outFile)
 	} else if *dec {
 		if err = doOp(fileBytes, keyHash, outFile, decrypt); err != nil {
 			log.Fatalf("can't decrypt file: %v", err)
 		}
+		fmt.Println("decrypted file:", *outFile)
 	} else {
 		log.Fatalf("no operation specified")
 	}
