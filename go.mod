@@ -1,3 +1,3 @@
-module github.com/danvixent/encrypt-any
+module github.com/danvixent/cryptany
 
 go 1.14
