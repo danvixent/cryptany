@@ -9,9 +9,9 @@ import (
 	"errors"
 	"flag"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 )
 
 var (
@@ -29,10 +29,7 @@ func main() {
 		log.Fatal("path or key flag is empty or not present")
 	}
 
-	file, err := ioutil.ReadFile(*path)
-	if err != nil {
-		log.Fatalf("can't open file: %v", err)
-	}
+	fileBytes, outFile := getBytesAndOut(path, out, enc)
 
 	keyHash, err := createHash([]byte(*key))
 	if err != nil {
@@ -40,19 +37,11 @@ func main() {
 	}
 
 	if *enc {
-		if *out == "" {
-			*out = *path + ".crypt"
-		}
-		if err = doOp(file, keyHash, *out, encrypt); err != nil {
+		if err = doOp(fileBytes, keyHash, outFile, encrypt); err != nil {
 			log.Fatalf("can't encrypt file: %v", err)
 		}
 	} else if *dec {
-		if *out == "" {
-			*out = *path + ".crypt"
-		}
-
-		outPath := (*path)[:len(*path)-6] //remove .crypt
-		if err = doOp(file, keyHash, outPath, decrypt); err != nil {
+		if err = doOp(fileBytes, keyHash, outFile, decrypt); err != nil {
 			log.Fatalf("can't decrypt file: %v", err)
 		}
 	} else {
@@ -60,6 +49,8 @@ func main() {
 	}
 }
 
+// doOp performs perfoms an fn which should be either encrypt or decrypt
+// on data and key
 func doOp(data, key []byte, outPath string, fn func([]byte, []byte) ([]byte, error)) error {
 	ciphered, err := fn(data, key)
 	if err != nil {
@@ -78,6 +69,7 @@ func doOp(data, key []byte, outPath string, fn func([]byte, []byte) ([]byte, err
 	return nil
 }
 
+// encrypt encrypts data using key
 func encrypt(data []byte, key []byte) ([]byte, error) {
 	gcm, err := getGCM(key)
 	if err != nil {
@@ -90,6 +82,7 @@ func encrypt(data []byte, key []byte) ([]byte, error) {
 	return gcm.Seal(nonce, nonce, data, nil), nil
 }
 
+// decrypt decrypts data using key
 func decrypt(data []byte, key []byte) ([]byte, error) {
 	gcm, err := getGCM(key)
 	if err != nil {
@@ -102,6 +95,7 @@ func decrypt(data []byte, key []byte) ([]byte, error) {
 	return gcm.Open(nil, nonce, ciph, nil)
 }
 
+// createHash returns a hashed form of key
 func createHash(key []byte) ([]byte, error) {
 	hs := md5.New()
 	if _, err := hs.Write(key); err != nil {
@@ -110,6 +104,8 @@ func createHash(key []byte) ([]byte, error) {
 	return []byte(hex.EncodeToString(hs.Sum(nil))), nil
 }
 
+// getGCM returns a GCM that will be used in
+// decryption or encryption
 func getGCM(key []byte) (cipher.AEAD, error) {
 	ciph, err := aes.NewCipher(key)
 	if err != nil {
@@ -121,4 +117,41 @@ func getGCM(key []byte) (cipher.AEAD, error) {
 		return nil, errors.New("can't create gcm: " + err.Error())
 	}
 	return gcm, nil
+}
+
+// getBytesAndOut returns the file bytes of path,
+// and determines the output path to use
+// isEnc tells whether it's encryption/decryption
+// to be performed.
+func getBytesAndOut(path *string, outPath *string, isEnc *bool) ([]byte, string) {
+	file, err := os.Open(*path)
+	if err != nil {
+		log.Fatalf("can't open file: %v", err)
+	}
+
+	// read file stats
+	info, err := file.Stat()
+	if err != nil {
+		log.Fatalf("can't read file stats: %v", err)
+	}
+
+	// use info.Size to determine file size to avoid reallocations
+	fileBytes := make([]byte, info.Size())
+	_, err = io.ReadFull(file, fileBytes)
+
+	const crypt = ".crypt"
+	if *isEnc {
+		if *outPath == "" {
+			*outPath = *path + crypt
+		} else {
+			*outPath = *outPath + info.Name() + crypt
+		}
+	} else {
+		if *outPath == "" {
+			*outPath = strings.TrimSuffix(*path, crypt)
+		} else {
+			*outPath = *outPath + strings.TrimSuffix(info.Name(), crypt)
+		}
+	}
+	return fileBytes, *outPath
 }
