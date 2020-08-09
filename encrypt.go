@@ -167,7 +167,7 @@ func getBytesAndOut(path *string, outPath *string, isEnc *bool) ([]byte, *string
 			*outPath = *path + crypt
 		} else {
 			// else use the file name and append crypt to it
-			*outPath = *outPath + info.Name() + crypt
+			*outPath = *outPath + "/" + info.Name() + crypt
 		}
 	} else { // decryption is occurring, remove crypt from the filename
 		if *outPath == "" {
@@ -175,7 +175,7 @@ func getBytesAndOut(path *string, outPath *string, isEnc *bool) ([]byte, *string
 			*outPath = strings.TrimSuffix(*path, crypt)
 		} else {
 			// else remove crypt from filename and append to *outPath
-			*outPath = *outPath + strings.TrimSuffix(info.Name(), crypt)
+			*outPath = *outPath + "/" + strings.TrimSuffix(info.Name(), crypt)
 		}
 	}
 	return fileBytes, outPath
