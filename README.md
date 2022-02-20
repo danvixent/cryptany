@@ -4,8 +4,8 @@ A simple tool for encrypting any sequence of bytes using a key
 
 Use the following command to install it into your GOPATH
 
-```go
-    go get github.com/danvixent/cryptany
+```shell
+    go install github.com/danvixent/cryptany
 ```
 
 ## Examples
